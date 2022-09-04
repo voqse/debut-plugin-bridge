@@ -11,7 +11,7 @@ export type ExtraCandlesPluginOptions = {
     extraTickers: string[];
 };
 
-export function corrTransport(opts: ExtraCandlesPluginOptions): PluginInterface {
+export function extraCandles(opts: ExtraCandlesPluginOptions): PluginInterface {
     let extraDebuts: ExtraDebut[] = [];
     let extraCandles: Candle[][] = []; // [0] - current candles; [1] - previous candle
 
