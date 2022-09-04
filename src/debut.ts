@@ -1,5 +1,5 @@
 import { Debut } from '@debut/community-core';
-import { BaseTransport, Candle, DebutOptions } from '@debut/types';
+import { BaseTransport, DebutOptions } from '@debut/types';
 
 export class ExtraDebut extends Debut {
     constructor(transport: BaseTransport, opts: DebutOptions) {

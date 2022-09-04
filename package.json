@@ -1,23 +1,27 @@
 {
-  "name": "debut-plugin-extra-candles",
-  "version": "1.0.0",
-  "description": "Debut plugin that provides additional candles for specified tickers.",
-  "main": "dist/index.js",
-  "scripts": {
-    "compile": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/voqse/debut-plugin-extra-candles.git"
-  },
-  "author": "voqse",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/voqse/debut-plugin-extra-candles/issues"
-  },
-  "homepage": "https://github.com/voqse/debut-plugin-extra-candles#readme",
-  "devDependencies": {
-    "@debut/types": "^4.0.2",
-    "typescript": "^4.8.2"
-  }
+    "name": "debut-plugin-extra-candles",
+    "version": "1.0.0",
+    "description": "Debut plugin that provides additional candles for specified tickers.",
+    "main": "dist/index.js",
+    "scripts": {
+        "compile": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/voqse/debut-plugin-extra-candles.git"
+    },
+    "author": "voqse",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/voqse/debut-plugin-extra-candles/issues"
+    },
+    "homepage": "https://github.com/voqse/debut-plugin-extra-candles#readme",
+
+    "dependencies": {
+        "@debut/community-core": "^4.0.4"
+    },
+    "devDependencies": {
+        "@debut/types": "^4.0.2",
+        "typescript": "^4.8.2"
+    }
 }
