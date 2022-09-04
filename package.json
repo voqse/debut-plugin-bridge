@@ -28,6 +28,7 @@
     },
     "devDependencies": {
         "@debut/types": "^4.0.2",
+        "husky": "^8.0.1",
         "typescript": "^4.8.2"
     }
 }
