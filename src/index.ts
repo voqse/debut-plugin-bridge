@@ -12,13 +12,14 @@ export interface ExtraCandlesPluginAPI {
 }
 
 export function extraCandles(opts: ExtraCandlesPluginOptions): PluginInterface {
-    let extraDebuts: ExtraDebut[] = [];
-    let extraCandles: Candle[][] = []; // [0] - current candles; [1] - previous candle
+    // TODO: Validate if a key is in extraTickers array
+    const debuts: { [key: string]: ExtraDebut } = {};
+    const candles: { [key: string]: Candle[] } = {};
 
     return {
         name: 'extraCandles',
         api: {
-            getCandles: () => extraCandles,
+            getCandles: () => candles,
         },
 
         onInit() {
@@ -26,35 +27,37 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): PluginInterface {
             const { transport, opts: debutOpts } = this.debut;
 
             // Init additional bots for every extra ticker
-            extraDebuts = opts.extraTickers.map(
-                (ticker) => new ExtraDebut(transport, { ...debutOpts, ticker, sandbox: true }),
-            );
+            for (const ticker of opts.extraTickers) {
+                debuts[ticker] = new ExtraDebut(transport, { ...debutOpts, ticker, sandbox: true });
+            }
         },
 
         async onStart() {
             // Start all the bots
-            for (const extraDebut of extraDebuts) {
-                await extraDebut.start();
+            for (const ticker of opts.extraTickers) {
+                await debuts[ticker].start();
             }
         },
 
         async onCandle() {
-            // Get current candle for all additional tickers
-            const currCandles = extraDebuts.map((extraDebut) => extraDebut.currentCandle);
+            // Map all candles into last and prev pairs
+            for (const ticker of opts.extraTickers) {
+                const { currentCandle } = debuts[ticker];
 
-            // Last one goes in array start
-            extraCandles.unshift(currCandles);
+                // Last one goes in array start
+                candles[ticker].unshift(currentCandle);
 
-            // Keep only current and previous candles
-            if (extraCandles.length === 3) {
-                extraCandles.pop();
+                // Keep only current and previous candles
+                if (candles[ticker].length === 3) {
+                    candles[ticker].pop();
+                }
             }
         },
 
         async onDispose() {
             // Stop all the bots
-            for (const extraDebut of extraDebuts) {
-                await extraDebut.dispose();
+            for (const ticker of opts.extraTickers) {
+                await debuts[ticker].dispose();
             }
         },
     };
