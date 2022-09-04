@@ -1,6 +1,6 @@
 {
     "name": "debut-plugin-extra-candles",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Debut plugin that provides additional candles for specified tickers.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -18,8 +18,7 @@
         "url": "https://github.com/voqse/debut-plugin-extra-candles/issues"
     },
     "homepage": "https://github.com/voqse/debut-plugin-extra-candles#readme",
-
-    "dependencies": {
+    "peerDependencies": {
         "@debut/community-core": "^4.0.4"
     },
     "devDependencies": {
