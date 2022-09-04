@@ -10,7 +10,7 @@
         "api"
     ],
     "scripts": {
-        "compile": "tsc",
+        "build": "tsc",
         "watch": "tsc --watch"
     },
     "repository": {
