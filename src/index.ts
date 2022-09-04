@@ -1,15 +1,15 @@
 import { Candle, PluginInterface } from '@debut/types';
 import { ExtraDebut } from './debut';
 
+export type ExtraCandlesPluginOptions = {
+    extraTickers: string[];
+};
+
 export interface ExtraCandlesPluginAPI {
     extraCandles: {
         getCandles: () => Candle[][];
     };
 }
-
-export type ExtraCandlesPluginOptions = {
-    extraTickers: string[];
-};
 
 export function extraCandles(opts: ExtraCandlesPluginOptions): PluginInterface {
     let extraDebuts: ExtraDebut[] = [];
