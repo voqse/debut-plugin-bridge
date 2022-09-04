@@ -5,15 +5,70 @@
 
 A plugin that provides additional candles of specified tickers for [Debut](https://github.com/debut-js) platform.
 
-- [Install](#Install)
-- [Usage](#Usage)
-- [Example](#Example)
-
 ## Install
-[@debut/community-core](https://github.com/debut-js/Strategies) must be installed. If you are using [Strategies](https://github.com/debut-js/Strategies) repository just type:
-```
+[@debut/community-core](https://github.com/debut-js/Strategies) should be installed. If you are using [Strategies](https://github.com/debut-js/Strategies) repository just type:
+```shell
 npm install debut-plugin-extra-candles
 ```
 ## Usage
+1. Extend strategy options with `ExtraCandlesPluginOptions`:
+```typescript
+// bot.ts
+export interface CCIDynamicBotOptions
+    extends ExtraCandlesPluginOptions {
+    //...
+}
 
-## Example
+// cfgs.ts
+export const ETHUSDT: CCIDynamicBotOptions = {
+    corrTopLevel: 0.4,
+    corrLowLevel: -0.4,
+    corrPeriod: 20,
+    extraTickers: ['BTCUSDT'],
+    //...
+```
+
+2. Declare `ExtraCandlesPluginAPI`:
+```typescript
+// bot.ts
+export class CCIDynamic extends Debut {
+    declare opts: ExtraCandlesPluginAPI;
+
+    //...
+
+}
+```
+
+3. Register `extraCandles()` plugin
+```typescript
+// bot.ts
+this.registerPlugins([extraCandles(this.opts)]);
+```
+
+4. Get candles:
+```typescript
+// bot.ts
+this.plugins.extraCandles.getCandles();
+
+// will return:
+// {
+//     BTCUSDT: [
+//         {
+//             time: 1662240600000,
+//             o: 1552.42,
+//             c: 1552.42,
+//             h: 1552.42,
+//             l: 1552.42,
+//             v: 2456
+//         },
+//         {
+//             time: 1662239700000,
+//             o: 1554.6,
+//             c: 1554.6,
+//             h: 1554.6,
+//             l: 1554.6,
+//             v: 3274
+//         }
+//     ]
+// }
+```
