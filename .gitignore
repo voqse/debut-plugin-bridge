@@ -1,5 +1,5 @@
 # production
-dist
+# dist
 
 # yarn
 .yarn/*
