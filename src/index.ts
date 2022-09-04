@@ -29,6 +29,7 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): PluginInterface {
             // Init additional bots for every extra ticker
             for (const ticker of opts.extraTickers) {
                 debuts[ticker] = new ExtraDebut(transport, { ...debutOpts, ticker, sandbox: true });
+                candles[ticker] = [];
             }
         },
 
