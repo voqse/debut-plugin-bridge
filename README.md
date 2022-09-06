@@ -1,54 +1,51 @@
-# debut-plugin-extra-candles
+# debut-plugin-candles
 
-[![CI](https://img.shields.io/github/workflow/status/voqse/debut-plugin-extra-candles/CI)](https://github.com/voqse/debut-plugin-extra-candles/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/debut-plugin-extra-candles)](https://www.npmjs.com/package/debut-plugin-extra-candles)
+[![CI](https://img.shields.io/github/workflow/status/voqse/debut-plugin-candles/CI)](https://github.com/voqse/debut-plugin-candles/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/debut-plugin-candles)](https://www.npmjs.com/package/debut-plugin-candles)
 
 A plugin for [Debut](https://github.com/debut-js) platform that provides additional candles of specified tickers to strategy.
 
 ## Install
 [@debut/community-core](https://github.com/debut-js/Strategies) should be installed. If you are using [Strategies](https://github.com/debut-js/Strategies) repository just type:
 ```shell
-npm install debut-plugin-extra-candles
+npm install debut-plugin-candles
 ```
 ## Usage
-1. Extend strategy options with `ExtraCandlesPluginOptions`:
+1. Extend strategy options with `CandlesPluginOptions`:
 ```typescript
 // bot.ts
 export interface CCIDynamicBotOptions
-    extends ExtraCandlesPluginOptions {
+    extends CandlesPluginOptions {
     //...
 }
 
 // cfgs.ts
 export const ETHUSDT: CCIDynamicBotOptions = {
-    corrTopLevel: 0.4,
-    corrLowLevel: -0.4,
-    corrPeriod: 20,
-    extraTickers: ['BTCUSDT'],
+    candles: ['BTCUSDT'],
     //...
 ```
 
-2. Declare `ExtraCandlesPluginAPI`:
+2. Declare `CandlesPluginAPI`:
 ```typescript
 // bot.ts
 export class CCIDynamic extends Debut {
-    declare opts: ExtraCandlesPluginAPI;
+    declare opts: CandlesPluginAPI;
 
     //...
 
 }
 ```
 
-3. Register `extraCandles()` plugin
+3. Register `candlesPlugin()` plugin
 ```typescript
 // bot.ts
-this.registerPlugins([extraCandles(this.opts)]);
+this.registerPlugins([candlesPlugin(this.opts)]);
 ```
 
 4. Get candles:
 ```typescript
 // bot.ts
-this.plugins.extraCandles.getCandles();
+this.plugins.candles.get();
 
 // will return ([0] last, [1] prev):
 // {

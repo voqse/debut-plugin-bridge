@@ -5,7 +5,7 @@ import { logger, LogLevel } from './utils';
 export const pluginName = 'candles';
 
 export interface CandlesPluginOptions extends DebutOptions {
-    extraTickers: string[];
+    candles: string[];
     logLevel: LogLevel;
 }
 
@@ -22,8 +22,8 @@ export interface CandlesInterface extends PluginInterface {
     api: CandlesMethodsInterface;
 }
 
-export function extraCandles(opts: CandlesPluginOptions): CandlesInterface {
-    // TODO: Validate if a key is in extraTickers array
+export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
+    // TODO: Validate if a key is in opts.candles array
     const bots: { [key: string]: Bot } = {};
     const candles: { [key: string]: Candle[] } = {};
     const log = logger(pluginName, opts.logLevel);
@@ -41,7 +41,7 @@ export function extraCandles(opts: CandlesPluginOptions): CandlesInterface {
 
             // Init additional bots for every extra ticker
             try {
-                for (const ticker of opts.extraTickers) {
+                for (const ticker of opts.candles) {
                     log.debug(`Creating ${ticker} bot...`);
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
                     candles[ticker] = [];
@@ -58,7 +58,7 @@ export function extraCandles(opts: CandlesPluginOptions): CandlesInterface {
             log.info('Starting plugin...');
 
             // Start all the bots
-            for (const ticker of opts.extraTickers) {
+            for (const ticker of opts.candles) {
                 log.debug(`Starting ${ticker} bot...`);
                 await bots[ticker].start();
             }
@@ -69,7 +69,7 @@ export function extraCandles(opts: CandlesPluginOptions): CandlesInterface {
             log.verbose('Candle received');
 
             // Map all candles into last and prev pairs
-            for (const ticker of opts.extraTickers) {
+            for (const ticker of opts.candles) {
                 log.verbose(`Looking for ${ticker} candle...`);
                 const { currentCandle } = bots[ticker];
 
@@ -81,13 +81,13 @@ export function extraCandles(opts: CandlesPluginOptions): CandlesInterface {
                     candles[ticker].pop();
                 }
             }
-            log.verbose(`${opts.extraTickers.length} candle(s) received`);
+            log.verbose(`${opts.candles.length} candle(s) received`);
         },
 
         async onDispose() {
             log.info('Shutting down plugin...');
             // Stop all the bots
-            for (const ticker of opts.extraTickers) {
+            for (const ticker of opts.candles) {
                 log.debug(`Shutting down ${ticker} bot...`);
                 await bots[ticker].dispose();
             }
