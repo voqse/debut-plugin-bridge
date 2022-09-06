@@ -10,7 +10,8 @@ export interface CandlesPluginOptions extends DebutOptions {
 }
 
 export interface CandlesMethodsInterface {
-    get(ticker?: string): { [key: string]: Candle[] } | Candle[];
+    get(): TickersObject<Candle[]>;
+    get(ticker: string): Candle[];
 }
 
 export interface CandlesPluginAPI {
@@ -22,16 +23,26 @@ export interface CandlesInterface extends PluginInterface {
     api: CandlesMethodsInterface;
 }
 
+export type TickersObject<T> = {
+    [key: string]: T;
+};
+
 export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
     // TODO: Validate if a key is in opts.candles array
-    const bots: { [key: string]: Bot } = {};
-    const candles: { [key: string]: Candle[] } = {};
+    const bots: TickersObject<Bot> = {};
+    const candles: TickersObject<Candle[]> = {};
     const log = logger(pluginName, opts.logLevel);
+
+    function get(): TickersObject<Candle[]>;
+    function get(ticker: string): Candle[];
+    function get(ticker?: string): any {
+        return ticker ? candles[ticker] : candles;
+    }
 
     return {
         name: pluginName,
         api: {
-            get: (ticker) => (ticker ? candles[ticker] : candles),
+            get,
         },
 
         async onInit() {
