@@ -56,28 +56,40 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
                     log.debug(`Creating ${ticker} bot...`);
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
                     candles[ticker] = [];
-
-                    // await bots[ticker].learn(1);
                 }
+                log.debug(`${Object.keys(bots).length} bot(s) created`);
             } catch (e) {
-                log.error('Bot(s) creation fail', e);
+                log.error('Bot(s) creation fail\n', e);
             }
-            log.debug(`${Object.keys(bots).length} bot(s) created`);
-        },
 
-        async onStart() {
-            log.info('Starting plugin...');
+            // Pre-learn all bots
+            try {
+                await Promise.all(
+                    opts.candles.map((ticker) => {
+                        log.debug(`Pre-learning ${ticker} bot...`);
+                        return bots[ticker].learn(7);
+                    }),
+                );
+                log.debug(`${Object.keys(bots).length} bot(s) pre-learned`);
+            } catch (e) {
+                log.error('Bot(s) pre-learning fail\n', e);
+            }
 
             // Start all the bots concurrently
-            await Promise.all(
-                opts.candles.map((ticker) => {
-                    log.debug(`Starting ${ticker} bot...`);
-                    return bots[ticker].start();
-                }),
-            );
-
-            log.debug(`${Object.keys(bots).length} bot(s) started`);
+            try {
+                await Promise.all(
+                    opts.candles.map((ticker) => {
+                        log.debug(`Starting ${ticker} bot...`);
+                        return bots[ticker].start();
+                    }),
+                );
+                log.debug(`${Object.keys(bots).length} bot(s) started`);
+            } catch (e) {
+                log.error('Bot(s) start fail\n', e);
+            }
         },
+
+        // async onStart() {},
 
         async onCandle() {
             log.verbose('Candle received');
@@ -101,14 +113,17 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
         async onDispose() {
             log.info('Shutting down plugin...');
             // Stop all the bots concurrently
-            await Promise.all(
-                opts.candles.map((ticker) => {
-                    log.debug(`Shutting down ${ticker} bot...`);
-                    return bots[ticker].dispose();
-                }),
-            );
-
-            log.debug(`${Object.keys(bots).length} bot(s) stopped`);
+            try {
+                await Promise.all(
+                    opts.candles.map((ticker) => {
+                        log.debug(`Stop ${ticker} bot...`);
+                        return bots[ticker].dispose();
+                    }),
+                );
+                log.debug(`${Object.keys(bots).length} bot(s) stopped`);
+            } catch (e) {
+                log.error('Bot(s) stop fail\n', e);
+            }
         },
     };
 }
