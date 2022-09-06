@@ -50,7 +50,7 @@ this.registerPlugins([extraCandles(this.opts)]);
 // bot.ts
 this.plugins.extraCandles.getCandles();
 
-// will return:
+// will return ([0] last, [1] prev):
 // {
 //     BTCUSDT: [
 //         {
