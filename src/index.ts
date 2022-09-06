@@ -1,35 +1,37 @@
-import { Candle, PluginInterface } from '@debut/types';
-import { ExtraDebut } from './debut';
+import { Candle, DebutOptions, PluginInterface } from '@debut/types';
+import { Bot } from './bot';
 import { logger, LogLevel } from './utils';
 
-export type ExtraCandlesPluginOptions = {
+export const pluginName = 'candles';
+
+export interface CandlesPluginOptions extends DebutOptions {
     extraTickers: string[];
     logLevel: LogLevel;
-};
-
-export interface ExtraCandlesMethodsInterface {
-    getCandles(): { [key: string]: Candle[] };
 }
 
-export interface ExtraCandlesPluginAPI {
-    extraCandles: ExtraCandlesMethodsInterface;
+export interface CandlesMethodsInterface {
+    get(): { [key: string]: Candle[] };
 }
 
-export interface ExtraCandlesInterface extends PluginInterface {
-    name: 'extraCandles';
-    api: ExtraCandlesMethodsInterface;
+export interface CandlesPluginAPI {
+    candles: CandlesMethodsInterface;
 }
 
-export function extraCandles(opts: ExtraCandlesPluginOptions): ExtraCandlesInterface {
+export interface CandlesInterface extends PluginInterface {
+    name: string;
+    api: CandlesMethodsInterface;
+}
+
+export function extraCandles(opts: CandlesPluginOptions): CandlesInterface {
     // TODO: Validate if a key is in extraTickers array
-    const debuts: { [key: string]: ExtraDebut } = {};
+    const bots: { [key: string]: Bot } = {};
     const candles: { [key: string]: Candle[] } = {};
-    const log = logger('[extraCandles]', opts.logLevel);
+    const log = logger(pluginName, opts.logLevel);
 
     return {
-        name: 'extraCandles',
+        name: pluginName,
         api: {
-            getCandles: () => candles,
+            get: () => candles,
         },
 
         async onInit() {
@@ -40,8 +42,8 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): ExtraCandlesInter
             // Init additional bots for every extra ticker
             try {
                 for (const ticker of opts.extraTickers) {
-                    log.verbose(`Creating ${ticker} bot...`);
-                    debuts[ticker] = new ExtraDebut(transport, { ...debutOpts, ticker, sandbox: true });
+                    log.debug(`Creating ${ticker} bot...`);
+                    bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
                     candles[ticker] = [];
 
                     // await debuts[ticker].start();
@@ -49,7 +51,7 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): ExtraCandlesInter
             } catch (e) {
                 log.error('Bot(s) creation fail', e);
             }
-            log.debug(`${Object.keys(debuts).length} bot(s) created`);
+            log.debug(`${Object.keys(bots).length} bot(s) created`);
         },
 
         async onStart() {
@@ -57,10 +59,10 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): ExtraCandlesInter
 
             // Start all the bots
             for (const ticker of opts.extraTickers) {
-                log.verbose(`Starting ${ticker} bot...`);
-                await debuts[ticker].start();
+                log.debug(`Starting ${ticker} bot...`);
+                await bots[ticker].start();
             }
-            log.debug(`${Object.keys(debuts).length} bot(s) started`);
+            log.debug(`${Object.keys(bots).length} bot(s) started`);
         },
 
         async onCandle() {
@@ -69,7 +71,7 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): ExtraCandlesInter
             // Map all candles into last and prev pairs
             for (const ticker of opts.extraTickers) {
                 log.verbose(`Looking for ${ticker} candle...`);
-                const { currentCandle } = debuts[ticker];
+                const { currentCandle } = bots[ticker];
 
                 // Last one goes in array start
                 candles[ticker].unshift(currentCandle);
@@ -79,17 +81,17 @@ export function extraCandles(opts: ExtraCandlesPluginOptions): ExtraCandlesInter
                     candles[ticker].pop();
                 }
             }
-            log.verbose('All candle(s) received');
+            log.verbose(`${opts.extraTickers.length} candle(s) received`);
         },
 
         async onDispose() {
             log.info('Shutting down plugin...');
             // Stop all the bots
             for (const ticker of opts.extraTickers) {
-                log.verbose(`Shutting down ${ticker} bot...`);
-                await debuts[ticker].dispose();
+                log.debug(`Shutting down ${ticker} bot...`);
+                await bots[ticker].dispose();
             }
-            log.debug(`${Object.keys(debuts).length} bot(s) stopped`);
+            log.debug(`${Object.keys(bots).length} bot(s) stopped`);
         },
     };
 }

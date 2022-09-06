@@ -1,5 +1,5 @@
 {
-    "name": "debut-plugin-extra-candles",
+    "name": "debut-plugin-candles",
     "version": "1.1.2",
     "description": "Debut plugin that provides additional candles for specified tickers.",
     "main": "dist/index.js",

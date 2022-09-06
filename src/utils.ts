@@ -6,6 +6,10 @@ export enum LogLevel {
     verbose,
 }
 
+// function format(date = `[${new Date().toLocaleString()}]`, tag, ...message) {
+//     return [date, tag, ...message]
+// }
+
 export function logger(tag: string, level: LogLevel = LogLevel.error) {
     // const methods = {};
     // for (const levelName in LogLevel) {
@@ -19,22 +23,22 @@ export function logger(tag: string, level: LogLevel = LogLevel.error) {
     return {
         verbose(...message) {
             if (level >= LogLevel.verbose) {
-                console.log(tag, ...message);
+                console.log(`[${new Date().toUTCString()}]`, `(${tag})`, ...message);
             }
         },
         debug(...message) {
             if (level >= LogLevel.debug) {
-                console.debug(tag, ...message);
+                console.debug(`[${new Date().toUTCString()}]`, `(${tag})`, ...message);
             }
         },
         info(...message) {
             if (level >= LogLevel.info) {
-                console.info(tag, ...message);
+                console.info(`[${new Date().toUTCString()}]`, `(${tag})`, ...message);
             }
         },
         error(...message) {
             if (level >= LogLevel.error) {
-                console.error(tag, ...message);
+                console.error(`[${new Date().toUTCString()}]`, `(${tag})`, ...message);
             }
         },
     };
