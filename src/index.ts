@@ -1,16 +1,20 @@
 import { Candle, DebutOptions, PluginInterface } from '@debut/types';
+import { logger, LoggerOptions } from '@voqse/logger';
 import { Bot } from './bot';
-import { logger, LogLevel } from './utils';
 
 const pluginName = 'candles';
 
-export interface CandlesPluginOptions extends DebutOptions {
-    [pluginName]: string[];
-    logLevel: LogLevel;
+// TODO: Validate if a key is in opts.candles array
+export type TickerData<T> = {
+    [key: string]: T;
+};
+
+export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
+    candles: string[];
 }
 
 export interface CandlesMethodsInterface {
-    get(): TickersObject<Candle[]>;
+    get(): TickerData<Candle[]>;
     get(ticker: string): Candle[];
 }
 
@@ -23,17 +27,12 @@ export interface CandlesInterface extends PluginInterface {
     api: CandlesMethodsInterface;
 }
 
-// TODO: Validate if a key is in opts.candles array
-export type TickersObject<T> = {
-    [key: string]: T;
-};
-
 export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
-    const log = logger(pluginName, opts.logLevel);
-    const bots: TickersObject<Bot> = {};
-    const candles: TickersObject<Candle[]> = {};
+    const log = logger(pluginName, opts);
+    const bots: TickerData<Bot> = {};
+    const candles: TickerData<Candle[]> = {};
 
-    function get(): TickersObject<Candle[]>;
+    function get(): TickerData<Candle[]>;
     function get(ticker: string): Candle[];
     function get(ticker?: string): any {
         return ticker ? candles[ticker] : candles;
@@ -62,19 +61,22 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
                 log.error('Bot(s) creation fail\n', e);
             }
 
-            // Pre-learn all bots
-            try {
-                await Promise.all(
-                    opts.candles.map((ticker) => {
-                        log.debug(`Pre-learning ${ticker} bot...`);
-                        return bots[ticker].learn(7);
-                    }),
-                );
-                log.debug(`${Object.keys(bots).length} bot(s) pre-learned`);
-            } catch (e) {
-                log.error('Bot(s) pre-learning fail\n', e);
-            }
+            // // Pre-learn all bots
+            // try {
+            //     await Promise.all(
+            //         opts.candles.map((ticker) => {
+            //             log.debug(`Pre-learning ${ticker} bot...`);
+            //             return bots[ticker].learn(7);
+            //         }),
+            //     );
+            //     log.debug(`${Object.keys(bots).length} bot(s) pre-learned`);
+            // } catch (e) {
+            //     log.error('Bot(s) pre-learning fail\n', e);
+            // }
+        },
 
+        async onStart() {
+            log.info('Starting plugin...');
             // Start all the bots concurrently
             try {
                 await Promise.all(
@@ -88,8 +90,6 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
                 log.error('Bot(s) start fail\n', e);
             }
         },
-
-        // async onStart() {},
 
         async onCandle() {
             log.verbose('Candle received');
