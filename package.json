@@ -15,14 +15,14 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/voqse/debut-plugin-extra-candles.git"
+        "url": "git+https://github.com/voqse/debut-plugin-candles.git"
     },
     "author": "voqse",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/voqse/debut-plugin-extra-candles/issues"
+        "url": "https://github.com/voqse/debut-plugin-candles/issues"
     },
-    "homepage": "https://github.com/voqse/debut-plugin-extra-candles#readme",
+    "homepage": "https://github.com/voqse/debut-plugin-candles#readme",
     "peerDependencies": {
         "@debut/community-core": "^4.0.4"
     },

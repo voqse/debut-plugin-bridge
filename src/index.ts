@@ -2,10 +2,10 @@ import { Candle, DebutOptions, PluginInterface } from '@debut/types';
 import { Bot } from './bot';
 import { logger, LogLevel } from './utils';
 
-export const pluginName = 'candles';
+const pluginName = 'candles';
 
 export interface CandlesPluginOptions extends DebutOptions {
-    candles: string[];
+    [pluginName]: string[];
     logLevel: LogLevel;
 }
 
@@ -14,7 +14,7 @@ export interface CandlesMethodsInterface {
 }
 
 export interface CandlesPluginAPI {
-    candles: CandlesMethodsInterface;
+    [pluginName]: CandlesMethodsInterface;
 }
 
 export interface CandlesInterface extends PluginInterface {
