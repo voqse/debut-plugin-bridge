@@ -10,7 +10,7 @@ export interface CandlesPluginOptions extends DebutOptions {
 }
 
 export interface CandlesMethodsInterface {
-    get(): { [key: string]: Candle[] };
+    get(ticker?: string): { [key: string]: Candle[] } | Candle[];
 }
 
 export interface CandlesPluginAPI {
@@ -31,7 +31,7 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
     return {
         name: pluginName,
         api: {
-            get: () => candles,
+            get: (ticker) => (ticker ? candles[ticker] : candles),
         },
 
         async onInit() {
