@@ -23,15 +23,15 @@ export interface CandlesInterface extends PluginInterface {
     api: CandlesMethodsInterface;
 }
 
+// TODO: Validate if a key is in opts.candles array
 export type TickersObject<T> = {
     [key: string]: T;
 };
 
 export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
-    // TODO: Validate if a key is in opts.candles array
+    const log = logger(pluginName, opts.logLevel);
     const bots: TickersObject<Bot> = {};
     const candles: TickersObject<Candle[]> = {};
-    const log = logger(pluginName, opts.logLevel);
 
     function get(): TickersObject<Candle[]>;
     function get(ticker: string): Candle[];
@@ -57,7 +57,7 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
                     candles[ticker] = [];
 
-                    // await debuts[ticker].start();
+                    // await bots[ticker].learn(1);
                 }
             } catch (e) {
                 log.error('Bot(s) creation fail', e);
@@ -68,11 +68,14 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
         async onStart() {
             log.info('Starting plugin...');
 
-            // Start all the bots
-            for (const ticker of opts.candles) {
-                log.debug(`Starting ${ticker} bot...`);
-                await bots[ticker].start();
-            }
+            // Start all the bots concurrently
+            await Promise.all(
+                opts.candles.map((ticker) => {
+                    log.debug(`Starting ${ticker} bot...`);
+                    return bots[ticker].start();
+                }),
+            );
+
             log.debug(`${Object.keys(bots).length} bot(s) started`);
         },
 
@@ -97,11 +100,14 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
 
         async onDispose() {
             log.info('Shutting down plugin...');
-            // Stop all the bots
-            for (const ticker of opts.candles) {
-                log.debug(`Shutting down ${ticker} bot...`);
-                await bots[ticker].dispose();
-            }
+            // Stop all the bots concurrently
+            await Promise.all(
+                opts.candles.map((ticker) => {
+                    log.debug(`Shutting down ${ticker} bot...`);
+                    return bots[ticker].dispose();
+                }),
+            );
+
             log.debug(`${Object.keys(bots).length} bot(s) stopped`);
         },
     };
