@@ -1,5 +1,6 @@
 src
 .github
+.husky
 .editorconfig
 .prettierrc
 tsconfig.json
