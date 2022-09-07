@@ -1,5 +1,5 @@
 import { Debut } from '@debut/community-core';
-import { BaseTransport, DebutOptions } from '@debut/types';
+import { BaseTransport, Candle, DebutOptions } from '@debut/types';
 
 export class Bot extends Debut {
     constructor(transport: BaseTransport, opts: DebutOptions) {
@@ -7,6 +7,10 @@ export class Bot extends Debut {
 
         // this.registerPlugins([]);
     }
+
+    // public handle(tick: Candle) {
+    //
+    // }
 
     // public getCandle() {
     //     return this.currentCandle;
