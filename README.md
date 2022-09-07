@@ -5,6 +5,9 @@
 
 A plugin for [Debut](https://github.com/debut-js) platform that provides additional candles of specified tickers to strategy.
 
+## Issues
+Working only in production mode. Do not use it while testing or genetics, it will provide desynchronized candles.
+
 ## Install
 [@debut/community-core](https://github.com/debut-js/Strategies) should be installed. If you are using [Strategies](https://github.com/debut-js/Strategies) repository just type:
 ```shell
