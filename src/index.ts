@@ -44,7 +44,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
     let testing = env === WorkingEnv.tester;
     let historicTicks: TickerData<Candle[]> = {};
-    let currentHistoricCandle: TickerData<Candle> = {};
+    // let currentHistoricCandle: TickerData<Candle> = {};
 
     function get(): typeof candles;
     function get(ticker: string): Candle;
@@ -123,36 +123,30 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             }
         },
 
-        onBeforeTick() {
-            if (testing) {
-                for (const ticker of opts.candles) {
-                    currentHistoricCandle[ticker] = historicTicks[ticker].shift();
-                }
-            }
-        },
+        // onBeforeTick() {
+        //     for (const ticker of opts.candles) {
+        //         candles[ticker] = testing ? historicTicks[ticker].shift() : bots[ticker].currentCandle;
+        //     }
+        // },
 
         async onTick(tick) {
             log.verbose('onTick: Candle received');
+            for (const ticker of opts.candles) {
+                candles[ticker] = testing ? historicTicks[ticker].shift() : bots[ticker].currentCandle;
+            }
 
             log.verbose(`onTick: ${opts.ticker} candle:`, tick);
             for (const ticker of opts.candles) {
-                const currentCandle = bots[ticker]?.currentCandle || currentHistoricCandle[ticker];
-
-                log.verbose(`onTick: ${ticker} candle:`, currentCandle);
+                log.verbose(`onTick: ${ticker} candle:`, candles[ticker]);
             }
         },
 
         async onCandle(candle) {
             log.verbose('onCandle: Candle received');
-
             log.verbose(`onCandle: ${opts.ticker} candle:`, candle);
             // Map all candles into last and prev pairs
             for (const ticker of opts.candles) {
-                // log.verbose(`Looking for ${ticker} candle...`);
-                const currentCandle = bots[ticker]?.currentCandle || currentHistoricCandle[ticker];
-
-                candles[ticker] = currentCandle;
-                log.verbose(`onCandle: ${ticker} candle:`, currentCandle);
+                log.verbose(`onCandle: ${ticker} candle:`, candles[ticker]);
             }
             // log.verbose(`onCandle: ${opts.candles.length} candle(s) received`);
         },
