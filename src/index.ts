@@ -1,9 +1,8 @@
-import { Candle, DebutOptions, PluginInterface } from '@debut/types';
-import { logger, LoggerOptions } from '@voqse/logger';
-import { cli, file } from '@debut/plugin-utils';
-import path from 'path';
-import { Bot } from './bot';
+import { Candle, DebutOptions, PluginInterface, WorkingEnv } from '@debut/types';
 import { generateOHLC, getHistory } from '@debut/community-core';
+import { logger, LoggerOptions } from '@voqse/logger';
+import { cli } from '@debut/plugin-utils';
+import { Bot } from './bot';
 
 const pluginName = 'candles';
 
@@ -17,9 +16,8 @@ export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
 }
 
 export interface CandlesMethodsInterface {
-    get(): TickerData<Candle[]>;
-    get(ticker: string): Candle[];
-    // addData(data): void;
+    get(): TickerData<Candle>;
+    get(ticker: string): Candle;
 }
 
 export interface CandlesPluginAPI {
@@ -39,19 +37,17 @@ type Params = {
     gap?: number;
 };
 
-export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
+export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): CandlesInterface {
     const log = logger(pluginName, opts);
     const bots: TickerData<Bot> = {};
-    const candles: TickerData<Candle[]> = {};
+    const candles: TickerData<Candle> = {};
 
-    let testing = false;
-    let ticks;
-    let testLastCandle: Candle;
+    let testing = env === WorkingEnv.tester;
+    let historicTicks: TickerData<Candle[]> = {};
+    let currentHistoricCandle: TickerData<Candle> = {};
 
-    // const debutCandles: Candle[] = [];
-
-    function get(): TickerData<Candle[]>;
-    function get(ticker: string): Candle[];
+    function get(): typeof candles;
+    function get(ticker: string): Candle;
     function get(ticker?: string): any {
         return ticker ? candles[ticker] : candles;
     }
@@ -60,38 +56,39 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
         name: pluginName,
         api: {
             get,
-            // addData(data) {
-            //     debutCandles.push(data);
-            // },
         },
 
         async onInit() {
             log.info('Initializing plugin...');
-            const { days, gap, ohlc } = cli.getArgs<Params>();
-
             // Get main bot config
             const { transport, opts: debutOpts } = this.debut;
 
-            // @ts-ignore
-            if (transport?.setTicks) {
-                testing = true;
+            if (testing) {
+                const { days, gap, ohlc } = cli.getArgs<Params>();
 
-                log.debug(`Loading ${opts.candles[0]} history...`);
                 try {
-                    ticks = await getHistory({
-                        broker: opts.broker,
-                        interval: opts.interval,
-                        instrumentType: opts.instrumentType,
-                        ticker: opts.candles[0],
-                        days,
-                        gapDays: gap,
-                    });
-                    if (ohlc) {
-                        ticks = generateOHLC(ticks);
-                    }
-                    log.debug(`${ticks.length} candles loaded`);
+                    await Promise.all(
+                        opts.candles.map(async (ticker) => {
+                            log.debug(`Loading historic data for ${ticker}...`);
+
+                            historicTicks[ticker] = await getHistory({
+                                broker: opts.broker,
+                                interval: opts.interval,
+                                instrumentType: opts.instrumentType,
+                                ticker: opts.candles[0],
+                                days,
+                                gapDays: gap,
+                            });
+
+                            if (ohlc) {
+                                historicTicks[ticker] = generateOHLC(historicTicks[ticker]);
+                            }
+                        }),
+                    );
+                    log.debug(`Historic data for ${Object.keys(historicTicks).length} ticker(s) loaded`);
+                    return;
                 } catch (e) {
-                    log.error('History load fail\n', e);
+                    log.error('Historic data load fail\n', e);
                 }
             }
 
@@ -100,29 +97,18 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
                 for (const ticker of opts.candles) {
                     log.debug(`Creating ${ticker} bot...`);
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
-                    candles[ticker] = [];
+                    // candles[ticker] = [];
                 }
                 log.debug(`${Object.keys(bots).length} bot(s) created`);
             } catch (e) {
                 log.error('Bot(s) creation fail\n', e);
             }
-
-            // // Pre-learn all bots
-            // try {
-            //     await Promise.all(
-            //         opts.candles.map((ticker) => {
-            //             log.debug(`Pre-learning ${ticker} bot...`);
-            //             return bots[ticker].learn(7);
-            //         }),
-            //     );
-            //     log.debug(`${Object.keys(bots).length} bot(s) pre-learned`);
-            // } catch (e) {
-            //     log.error('Bot(s) pre-learning fail\n', e);
-            // }
         },
 
         async onStart() {
             log.info('Starting plugin...');
+            if (testing) return;
+
             // Start all the bots concurrently
             try {
                 await Promise.all(
@@ -139,7 +125,9 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
 
         onBeforeTick() {
             if (testing) {
-                testLastCandle = ticks.shift();
+                for (const ticker of opts.candles) {
+                    currentHistoricCandle[ticker] = historicTicks[ticker].shift();
+                }
             }
         },
 
@@ -148,7 +136,8 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
 
             log.verbose(`onTick: ${opts.ticker} candle:`, tick);
             for (const ticker of opts.candles) {
-                const currentCandle = testing ? testLastCandle : bots[ticker].currentCandle;
+                const currentCandle = bots[ticker]?.currentCandle || currentHistoricCandle[ticker];
+
                 log.verbose(`onTick: ${ticker} candle:`, currentCandle);
             }
         },
@@ -160,35 +149,17 @@ export function candlesPlugin(opts: CandlesPluginOptions): CandlesInterface {
             // Map all candles into last and prev pairs
             for (const ticker of opts.candles) {
                 // log.verbose(`Looking for ${ticker} candle...`);
-                const currentCandle = testing ? testLastCandle : bots[ticker].currentCandle;
+                const currentCandle = bots[ticker]?.currentCandle || currentHistoricCandle[ticker];
 
-                // Last one goes in array start
-                candles[ticker].unshift(currentCandle);
-
+                candles[ticker] = currentCandle;
                 log.verbose(`onCandle: ${ticker} candle:`, currentCandle);
-
-                // Keep only current and previous candles
-                if (candles[ticker].length === 3) {
-                    candles[ticker].pop();
-                }
             }
             // log.verbose(`onCandle: ${opts.candles.length} candle(s) received`);
         },
 
         async onDispose() {
             log.info('Shutting down plugin...');
-
-            // log.debug('Saving candles data...');
-            // const botData = await cli.getBotData(this.debut.getName())!;
-            // const workingDir = `${botData?.src}/${pluginName}/${this.debut.opts.ticker}/`;
-            // const jsonPath = path.resolve(workingDir, './candles.json');
-            //
-            // try {
-            //     file.ensureFile(jsonPath);
-            //     file.saveFile(jsonPath, debutCandles);
-            // } catch (e) {
-            //     log.error('Candles data save fail\n', e);
-            // }
+            if (testing) return;
 
             // Stop all the bots concurrently
             try {

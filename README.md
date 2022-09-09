@@ -39,7 +39,7 @@ export class CCIDynamic extends Debut {
 3. Register `candlesPlugin()` plugin
 ```typescript
 // bot.ts
-this.registerPlugins([candlesPlugin(this.opts)]);
+this.registerPlugins([candlesPlugin(this.opts, env?)]);
 ```
 
 4. Get candles:
@@ -49,8 +49,7 @@ this.plugins.candles.get();
 
 // will return ([0] last, [1] prev):
 // {
-//     BTCUSDT: [
-//         {
+//     BTCUSDT: {
 //             time: 1662240600000,
 //             o: 1552.42,
 //             c: 1552.42,
@@ -58,14 +57,5 @@ this.plugins.candles.get();
 //             l: 1552.42,
 //             v: 2456
 //         },
-//         {
-//             time: 1662239700000,
-//             o: 1554.6,
-//             c: 1554.6,
-//             h: 1554.6,
-//             l: 1554.6,
-//             v: 3274
-//         }
-//     ]
 // }
 ```

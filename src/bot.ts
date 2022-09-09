@@ -8,10 +8,6 @@ export class Bot extends Debut {
         // this.registerPlugins([]);
     }
 
-    // public handle(tick: Candle) {
-    //
-    // }
-
     // public getCandle() {
     //     return this.currentCandle;
     // }
