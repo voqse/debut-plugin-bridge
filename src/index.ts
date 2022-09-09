@@ -123,28 +123,34 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             }
         },
 
-        // onBeforeTick() {
-        //     for (const ticker of opts.candles) {
-        //         candles[ticker] = testing ? historicTicks[ticker].shift() : bots[ticker].currentCandle;
-        //     }
-        // },
+        onBeforeTick() {
+            // Get most recent candle from bot as soon as possible while production mode
+            if (!testing) {
+                for (const ticker of opts.candles) {
+                    candles[ticker] = bots[ticker].currentCandle;
+                }
+            }
+        },
 
         async onTick(tick) {
             log.verbose('onTick: Candle received');
-            for (const ticker of opts.candles) {
-                candles[ticker] = testing ? historicTicks[ticker].shift() : bots[ticker].currentCandle;
+            // Get sync candle while testing
+            if (testing) {
+                for (const ticker of opts.candles) {
+                    candles[ticker] = historicTicks[ticker].shift();
+                }
             }
 
             log.verbose(`onTick: ${opts.ticker} candle:`, tick);
             for (const ticker of opts.candles) {
                 log.verbose(`onTick: ${ticker} candle:`, candles[ticker]);
             }
+            // log.verbose(`onTick: ${opts.candles.length} candle(s) received`);
         },
 
         async onCandle(candle) {
             log.verbose('onCandle: Candle received');
             log.verbose(`onCandle: ${opts.ticker} candle:`, candle);
-            // Map all candles into last and prev pairs
             for (const ticker of opts.candles) {
                 log.verbose(`onCandle: ${ticker} candle:`, candles[ticker]);
             }
