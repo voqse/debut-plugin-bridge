@@ -42,7 +42,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
     const bots: TickerData<Bot> = {};
     const candles: TickerData<Candle> = {};
 
-    let testing = env === WorkingEnv.tester;
+    let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
     let historicTicks: TickerData<Candle[]> = {};
     // let currentHistoricCandle: TickerData<Candle> = {};
 
