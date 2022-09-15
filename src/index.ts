@@ -43,8 +43,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
     const candles: TickerData<Candle> = {};
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
-    let historicTicks: TickerData<Candle[]> = {};
-    // let currentHistoricCandle: TickerData<Candle> = {};
+    let historyTicks: TickerData<Candle[]> = {};
 
     function get(): typeof candles;
     function get(ticker: string): Candle;
@@ -69,9 +68,9 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
                 try {
                     await Promise.all(
                         opts.candles.map(async (ticker) => {
-                            log.debug(`Loading historic data for ${ticker}...`);
+                            log.debug(`Loading historical data for ${ticker}...`);
 
-                            historicTicks[ticker] = await getHistory({
+                            historyTicks[ticker] = await getHistory({
                                 broker: opts.broker,
                                 interval: opts.interval,
                                 instrumentType: opts.instrumentType,
@@ -81,14 +80,14 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
                             });
 
                             if (ohlc) {
-                                historicTicks[ticker] = generateOHLC(historicTicks[ticker]);
+                                historyTicks[ticker] = generateOHLC(historyTicks[ticker]);
                             }
                         }),
                     );
-                    log.debug(`Historic data for ${Object.keys(historicTicks).length} ticker(s) loaded`);
+                    log.debug(`Historical data for ${Object.keys(historyTicks).length} ticker(s) loaded`);
                     return;
                 } catch (e) {
-                    log.error('Historic data load fail\n', e);
+                    log.error('Historical data load fail\n', e);
                 }
             }
 
@@ -137,7 +136,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             // Get sync candle while testing
             if (testing) {
                 for (const ticker of opts.candles) {
-                    candles[ticker] = historicTicks[ticker].shift();
+                    candles[ticker] = historyTicks[ticker].shift();
                 }
             }
 
