@@ -33,7 +33,6 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
     const candles: TickerData<Candle> = {};
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
-    let historyTicks: TickerData<Candle[]> = {};
 
     function get(): typeof candles;
     function get(ticker: string): Candle;
@@ -52,47 +51,15 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             // Get main bot config
             const { transport, opts: debutOpts } = this.debut;
 
-            // if (testing) {
-            //     const { days, gap, ohlc } = cli.getArgs<Params>();
-            //
-            //     try {
-            //         await Promise.all(
-            //             opts.candles.map(async (ticker) => {
-            //                 log.debug(`Loading historical data for ${ticker}...`);
-            //
-            //                 historyTicks[ticker] = await getHistory({
-            //                     broker: opts.broker,
-            //                     interval: opts.interval,
-            //                     instrumentType: opts.instrumentType,
-            //                     ticker: opts.candles[0],
-            //                     days,
-            //                     gapDays: gap,
-            //                 });
-            //
-            //                 if (ohlc) {
-            //                     historyTicks[ticker] = generateOHLC(historyTicks[ticker]);
-            //                 }
-            //             }),
-            //         );
-            //         log.debug(`Historical data for ${Object.keys(historyTicks).length} ticker(s) loaded`);
-            //         return;
-            //     } catch (e) {
-            //         log.error('Historical data load fail\n', e);
-            //     }
-            // }
-
             // Init additional bots for every extra ticker
-            try {
-                for (const ticker of opts.candles) {
-                    log.debug(`Creating ${ticker} bot...`);
-                    bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
+            for (const ticker of opts.candles) {
+                log.debug(`Creating ${ticker} bot...`);
+                bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
 
-                    if (testing) await bots[ticker].init();
-                }
-                log.debug(`${Object.keys(bots).length} bot(s) created`);
-            } catch (e) {
-                log.error('Bot(s) creation fail\n', e);
+                // Load history if testing mode
+                if (testing) await bots[ticker].init();
             }
+            log.debug(`${Object.keys(bots).length} bot(s) created`);
         },
 
         async onStart() {
@@ -100,17 +67,13 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             if (testing) return;
 
             // Start all the bots concurrently
-            try {
-                await Promise.all(
-                    opts.candles.map((ticker) => {
-                        log.debug(`Starting ${ticker} bot...`);
-                        return bots[ticker].start();
-                    }),
-                );
-                log.debug(`${Object.keys(bots).length} bot(s) started`);
-            } catch (e) {
-                log.error('Bot(s) start fail\n', e);
-            }
+            await Promise.all(
+                opts.candles.map((ticker) => {
+                    log.debug(`Starting ${ticker} bot...`);
+                    return bots[ticker].start();
+                }),
+            );
+            log.debug(`${Object.keys(bots).length} bot(s) started`);
         },
 
         onBeforeTick() {
@@ -141,17 +104,13 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             if (testing) return;
 
             // Stop all the bots concurrently
-            try {
-                await Promise.all(
-                    opts.candles.map((ticker) => {
-                        log.debug(`Stop ${ticker} bot...`);
-                        return bots[ticker].dispose();
-                    }),
-                );
-                log.debug(`${Object.keys(bots).length} bot(s) stopped`);
-            } catch (e) {
-                log.error('Bot(s) stop fail\n', e);
-            }
+            await Promise.all(
+                opts.candles.map((ticker) => {
+                    log.debug(`Stop ${ticker} bot...`);
+                    return bots[ticker].dispose();
+                }),
+            );
+            log.debug(`${Object.keys(bots).length} bot(s) stopped`);
         },
     };
 }
