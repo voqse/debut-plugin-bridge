@@ -5,7 +5,7 @@ import { Bot } from './bot';
 const pluginName = 'candles';
 
 // TODO: Validate if a key is in opts.candles array
-export type TickerData<T> = {
+export type CandlesData<T> = {
     [key: string]: T;
 };
 
@@ -14,7 +14,7 @@ export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
 }
 
 export interface CandlesMethodsInterface {
-    get(): TickerData<Candle>;
+    get(): CandlesData<Candle>;
     get(ticker: string): Candle;
 }
 
@@ -29,8 +29,8 @@ export interface CandlesInterface extends PluginInterface {
 
 export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): CandlesInterface {
     const log = logger(pluginName, opts);
-    const bots: TickerData<Bot> = {};
-    const candles: TickerData<Candle> = {};
+    const bots: CandlesData<Bot> = {};
+    const candles: CandlesData<Candle> = {};
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
 
@@ -55,7 +55,6 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             for (const ticker of opts.candles) {
                 log.debug(`Creating ${ticker} bot...`);
                 bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
-
                 // Load history if testing mode
                 if (testing) await bots[ticker].init();
             }
@@ -77,12 +76,13 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
         },
 
         onBeforeTick() {
-            // Get most recent candle from bot as soon as possible while production mode
+            // Get most recent candles from bots as soon as possible
             for (const ticker of opts.candles) {
                 candles[ticker] = bots[ticker].getCandle();
             }
         },
 
+        // Debug logging
         // async onTick(tick) {
         //     log.verbose('onTick: Candle received');
         //     log.verbose(`onTick: ${opts.ticker} candle:`, tick);

@@ -1,9 +1,6 @@
 import { Debut, generateOHLC, getHistory } from '@debut/community-core';
 import { BaseTransport, Candle, DebutOptions } from '@debut/types';
-import { logger } from '../../node-logger';
 import { cli } from '@debut/plugin-utils';
-
-const log = logger('candles/bot', { logLevel: 3 });
 
 type Params = {
     days?: number;
@@ -16,14 +13,11 @@ export class Bot extends Debut {
 
     constructor(transport: BaseTransport, opts: DebutOptions) {
         super(transport, opts);
-
-        // this.registerPlugins([]);
     }
 
     public async init() {
         const { days, gap, ohlc } = cli.getArgs<Params>();
-
-        log.debug(`Loading historical data for ${this.opts.ticker}...`);
+        // log.debug(`Loading historical data for ${this.opts.ticker}...`);
         this.historicalTicks = await getHistory({
             broker: this.opts.broker,
             interval: this.opts.interval,
