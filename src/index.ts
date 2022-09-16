@@ -1,7 +1,5 @@
 import { Candle, DebutOptions, PluginInterface, WorkingEnv } from '@debut/types';
-import { generateOHLC, getHistory } from '@debut/community-core';
 import { logger, LoggerOptions } from '@voqse/logger';
-import { cli } from '@debut/plugin-utils';
 import { Bot } from './bot';
 
 const pluginName = 'candles';
@@ -29,14 +27,6 @@ export interface CandlesInterface extends PluginInterface {
     api: CandlesMethodsInterface;
 }
 
-type Params = {
-    bot: string;
-    ticker: string;
-    days?: number;
-    ohlc?: boolean;
-    gap?: number;
-};
-
 export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): CandlesInterface {
     const log = logger(pluginName, opts);
     const bots: TickerData<Bot> = {};
@@ -62,41 +52,42 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             // Get main bot config
             const { transport, opts: debutOpts } = this.debut;
 
-            if (testing) {
-                const { days, gap, ohlc } = cli.getArgs<Params>();
-
-                try {
-                    await Promise.all(
-                        opts.candles.map(async (ticker) => {
-                            log.debug(`Loading historical data for ${ticker}...`);
-
-                            historyTicks[ticker] = await getHistory({
-                                broker: opts.broker,
-                                interval: opts.interval,
-                                instrumentType: opts.instrumentType,
-                                ticker: opts.candles[0],
-                                days,
-                                gapDays: gap,
-                            });
-
-                            if (ohlc) {
-                                historyTicks[ticker] = generateOHLC(historyTicks[ticker]);
-                            }
-                        }),
-                    );
-                    log.debug(`Historical data for ${Object.keys(historyTicks).length} ticker(s) loaded`);
-                    return;
-                } catch (e) {
-                    log.error('Historical data load fail\n', e);
-                }
-            }
+            // if (testing) {
+            //     const { days, gap, ohlc } = cli.getArgs<Params>();
+            //
+            //     try {
+            //         await Promise.all(
+            //             opts.candles.map(async (ticker) => {
+            //                 log.debug(`Loading historical data for ${ticker}...`);
+            //
+            //                 historyTicks[ticker] = await getHistory({
+            //                     broker: opts.broker,
+            //                     interval: opts.interval,
+            //                     instrumentType: opts.instrumentType,
+            //                     ticker: opts.candles[0],
+            //                     days,
+            //                     gapDays: gap,
+            //                 });
+            //
+            //                 if (ohlc) {
+            //                     historyTicks[ticker] = generateOHLC(historyTicks[ticker]);
+            //                 }
+            //             }),
+            //         );
+            //         log.debug(`Historical data for ${Object.keys(historyTicks).length} ticker(s) loaded`);
+            //         return;
+            //     } catch (e) {
+            //         log.error('Historical data load fail\n', e);
+            //     }
+            // }
 
             // Init additional bots for every extra ticker
             try {
                 for (const ticker of opts.candles) {
                     log.debug(`Creating ${ticker} bot...`);
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
-                    // candles[ticker] = [];
+
+                    if (testing) await bots[ticker].init();
                 }
                 log.debug(`${Object.keys(bots).length} bot(s) created`);
             } catch (e) {
@@ -124,37 +115,26 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
         onBeforeTick() {
             // Get most recent candle from bot as soon as possible while production mode
-            if (!testing) {
-                for (const ticker of opts.candles) {
-                    candles[ticker] = bots[ticker].currentCandle;
-                }
-            }
-        },
-
-        async onTick(tick) {
-            log.verbose('onTick: Candle received');
-            // Get sync candle while testing
-            if (testing) {
-                for (const ticker of opts.candles) {
-                    candles[ticker] = historyTicks[ticker].shift();
-                }
-            }
-
-            log.verbose(`onTick: ${opts.ticker} candle:`, tick);
             for (const ticker of opts.candles) {
-                log.verbose(`onTick: ${ticker} candle:`, candles[ticker]);
+                candles[ticker] = bots[ticker].getCandle();
             }
-            // log.verbose(`onTick: ${opts.candles.length} candle(s) received`);
         },
 
-        async onCandle(candle) {
-            log.verbose('onCandle: Candle received');
-            log.verbose(`onCandle: ${opts.ticker} candle:`, candle);
-            for (const ticker of opts.candles) {
-                log.verbose(`onCandle: ${ticker} candle:`, candles[ticker]);
-            }
-            // log.verbose(`onCandle: ${opts.candles.length} candle(s) received`);
-        },
+        // async onTick(tick) {
+        //     log.verbose('onTick: Candle received');
+        //     log.verbose(`onTick: ${opts.ticker} candle:`, tick);
+        //     for (const ticker of opts.candles) {
+        //         log.verbose(`onTick: ${ticker} candle:`, candles[ticker]);
+        //     }
+        // },
+        //
+        // async onCandle(candle) {
+        //     log.verbose('onCandle: Candle received');
+        //     log.verbose(`onCandle: ${opts.ticker} candle:`, candle);
+        //     for (const ticker of opts.candles) {
+        //         log.verbose(`onCandle: ${ticker} candle:`, candles[ticker]);
+        //     }
+        // },
 
         async onDispose() {
             log.info('Shutting down plugin...');
