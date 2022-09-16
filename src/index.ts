@@ -11,6 +11,7 @@ export type CandlesData<T> = {
 
 export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
     candles: string[];
+    learningDays?: number;
 }
 
 export interface CandlesMethodsInterface {
@@ -55,8 +56,10 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             for (const ticker of opts.candles) {
                 log.debug(`Creating ${ticker} bot...`);
                 bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
-                // Load history if testing mode
-                if (testing) await bots[ticker].init();
+                // Load history if testing or learning mode
+                if (testing || (!testing && opts.learningDays)) {
+                    await bots[ticker].init(opts.learningDays);
+                }
             }
             log.debug(`${Object.keys(bots).length} bot(s) created`);
         },
