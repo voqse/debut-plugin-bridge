@@ -25,7 +25,7 @@ export class Bot extends Debut {
             instrumentType,
             ticker,
             days,
-            gapDays: gap,
+            gapDays: gap || 0,
         };
 
         if (learningDays) {

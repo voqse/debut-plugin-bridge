@@ -23,12 +23,12 @@ export interface CandlesPluginAPI {
     [pluginName]: CandlesMethodsInterface;
 }
 
-export interface CandlesInterface extends PluginInterface {
+export interface CandlesPluginInterface extends PluginInterface {
     name: string;
     api: CandlesMethodsInterface;
 }
 
-export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): CandlesInterface {
+export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): CandlesPluginInterface {
     const log = logger(pluginName, opts);
     const bots: CandlesData<Bot> = {};
     const candles: CandlesData<Candle> = {};
@@ -57,7 +57,9 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
                 log.debug(`Creating ${ticker} bot...`);
                 bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
                 // Load history if testing or learning mode
-                if (testing || (!testing && opts.learningDays)) {
+                if (testing) {
+                    await bots[ticker].init();
+                } else if (opts.learningDays) {
                     await bots[ticker].init(opts.learningDays);
                 }
             }
@@ -87,18 +89,18 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
         // Debug logging
         // async onTick(tick) {
-        //     log.verbose('onTick: Candle received');
-        //     log.verbose(`onTick: ${opts.ticker} candle:`, tick);
+        //     log.verbose('onTick: Received');
+        //     log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
         //     for (const ticker of opts.candles) {
-        //         log.verbose(`onTick: ${ticker} candle:`, candles[ticker]);
+        //         log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
         //     }
         // },
         //
         // async onCandle(candle) {
-        //     log.verbose('onCandle: Candle received');
-        //     log.verbose(`onCandle: ${opts.ticker} candle:`, candle);
+        //     log.verbose('onCandle: Received');
+        //     log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
         //     for (const ticker of opts.candles) {
-        //         log.verbose(`onCandle: ${ticker} candle:`, candles[ticker]);
+        //         log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
         //     }
         // },
 
