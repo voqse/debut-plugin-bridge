@@ -88,21 +88,21 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
         },
 
         // Debug logging
-        // async onTick(tick) {
-        //     log.verbose('onTick: Received');
-        //     log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
-        //     for (const ticker of opts.candles) {
-        //         log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
-        //     }
-        // },
-        //
-        // async onCandle(candle) {
-        //     log.verbose('onCandle: Received');
-        //     log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
-        //     for (const ticker of opts.candles) {
-        //         log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
-        //     }
-        // },
+        async onTick(tick) {
+            log.verbose('onTick: Received');
+            log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
+            for (const ticker of opts.candles) {
+                log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
+            }
+        },
+
+        async onCandle(candle) {
+            log.verbose('onCandle: Received');
+            log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
+            for (const ticker of opts.candles) {
+                log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
+            }
+        },
 
         async onDispose() {
             log.info('Shutting down plugin...');
