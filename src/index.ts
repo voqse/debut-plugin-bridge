@@ -83,7 +83,12 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
         onBeforeTick() {
             // Get most recent candles from bots as soon as possible
             for (const ticker of opts.candles) {
-                candles[ticker] = bots[ticker].getCandle();
+                const candle = bots[ticker].getCandle();
+
+                if (!candle) {
+                    throw 'pluginCandles: Undefined candle received, please check your transport.';
+                }
+                candles[ticker] = candle;
             }
         },
 
