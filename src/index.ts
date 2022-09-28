@@ -9,14 +9,14 @@ export type CandlesData<T> = {
     [key: string]: T;
 };
 
-export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
-    candles: string[];
-    learningDays?: number;
+interface CandlesMethodsInterface {
+    get(): Candle[];
 }
 
-export interface CandlesMethodsInterface {
-    get(): CandlesData<Candle>;
-    get(ticker: string): Candle;
+export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
+    candles: string[];
+    // TODO: Get this param from CLI
+    learningDays?: number;
 }
 
 export interface CandlesPluginAPI {
@@ -35,16 +35,10 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
 
-    function get(): typeof candles;
-    function get(ticker: string): Candle;
-    function get(ticker?: string): any {
-        return ticker ? candles[ticker] : candles;
-    }
-
     return {
         name: pluginName,
         api: {
-            get,
+            get: () => Object.values(candles),
         },
 
         async onInit() {
@@ -53,16 +47,22 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             const { transport, opts: debutOpts } = this.debut;
 
             // Init additional bots for every extra ticker
-            for (const ticker of opts.candles) {
-                log.debug(`Creating ${ticker} bot...`);
-                bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
-                // Load history if testing or learning mode
-                if (testing) {
-                    await bots[ticker].init();
-                } else if (opts.learningDays) {
-                    await bots[ticker].init(opts.learningDays);
-                }
-            }
+            await Promise.allSettled(
+                opts.candles.map((ticker) => {
+                    log.debug(`Creating ${ticker} bot...`);
+                    bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
+
+                    // Load history if testing or learning mode
+                    // TODO: 1. Fix Issue: If main ticker history loaded, tester doesn't wait
+                    //       for additional loading, so plugin returns undefined candles
+                    //       2. Move cli days arg here and call init() without conditional
+                    if (testing) {
+                        bots[ticker].init();
+                    } else if (opts.learningDays) {
+                        bots[ticker].init(opts.learningDays);
+                    }
+                }),
+            );
             log.debug(`${Object.keys(bots).length} bot(s) created`);
         },
 
@@ -71,10 +71,10 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             if (testing) return;
 
             // Start all the bots concurrently
-            await Promise.all(
+            await Promise.allSettled(
                 opts.candles.map((ticker) => {
                     log.debug(`Starting ${ticker} bot...`);
-                    return bots[ticker].start();
+                    bots[ticker].start();
                 }),
             );
             log.debug(`${Object.keys(bots).length} bot(s) started`);
@@ -88,31 +88,31 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
         },
 
         // Debug logging
-        async onTick(tick) {
-            log.verbose('onTick: Received');
-            log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
-            for (const ticker of opts.candles) {
-                log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
-            }
-        },
+        // async onTick(tick) {
+        //     log.verbose('onTick: Received');
+        //     log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
+        //     for (const ticker of opts.candles) {
+        //         log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
+        //     }
+        // },
 
-        async onCandle(candle) {
-            log.verbose('onCandle: Received');
-            log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
-            for (const ticker of opts.candles) {
-                log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
-            }
-        },
+        // async onCandle(candle) {
+        //     log.verbose('onCandle: Received');
+        //     log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
+        //     for (const ticker of opts.candles) {
+        //         log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
+        //     }
+        // },
 
         async onDispose() {
             log.info('Shutting down plugin...');
             if (testing) return;
 
             // Stop all the bots concurrently
-            await Promise.all(
+            await Promise.allSettled(
                 opts.candles.map((ticker) => {
                     log.debug(`Stop ${ticker} bot...`);
-                    return bots[ticker].dispose();
+                    bots[ticker].dispose();
                 }),
             );
             log.debug(`${Object.keys(bots).length} bot(s) stopped`);

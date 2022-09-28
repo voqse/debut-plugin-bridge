@@ -33,7 +33,12 @@ export class Bot extends Debut {
             opts.days = learningDays;
             opts.gapDays = 0;
         }
-        this.historicalTicks = await getHistory(opts);
+
+        try {
+            this.historicalTicks = await getHistory(opts);
+        } catch (e) {
+            throw Error(`${opts.ticker} history load fail`, e);
+        }
 
         if (ohlc) {
             this.historicalTicks = generateOHLC(this.historicalTicks);
