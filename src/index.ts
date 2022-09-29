@@ -46,7 +46,7 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
 
             // Init additional bots for every extra ticker
             await Promise.allSettled(
-                opts.tickers.map((ticker) => {
+                opts.bridge.map((ticker) => {
                     log.debug(`Creating ${ticker} bot...`);
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
 
@@ -70,7 +70,7 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
 
             // Start all the bots concurrently
             await Promise.allSettled(
-                opts.tickers.map((ticker) => {
+                opts.bridge.map((ticker) => {
                     log.debug(`Starting ${ticker} bot...`);
                     bots[ticker].start();
                 }),
@@ -92,7 +92,7 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
             };
 
             // Get most recent candles from bots as soon as possible
-            for (const ticker of opts.tickers) {
+            for (const ticker of opts.bridge) {
                 candles[ticker] = getCandle(ticker);
             }
         },
@@ -120,7 +120,7 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
 
             // Stop all the bots concurrently
             await Promise.allSettled(
-                opts.tickers.map((ticker) => {
+                opts.bridge.map((ticker) => {
                     log.debug(`Stop ${ticker} bot...`);
                     bots[ticker].dispose();
                 }),
