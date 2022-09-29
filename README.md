@@ -11,41 +11,41 @@ A plugin for [Debut](https://github.com/debut-js) platform that provides additio
 npm install debut-plugin-bridge
 ```
 ## Usage
-1. Extend strategy options with `CandlesPluginOptions`:
+1. Extend strategy options with `BridgePluginOptions`:
 ```typescript
 // bot.ts
 export interface CCIDynamicBotOptions
-    extends CandlesPluginOptions {
+    extends BridgePluginOptions {
     //...
 }
 
 // cfgs.ts
 export const ETHUSDT: CCIDynamicBotOptions = {
-    candles: ['BTCUSDT'],
+    tickers: ['BTCUSDT'],
     //...
 ```
 
-2. Declare `CandlesPluginAPI`:
+2. Declare `BridgePluginAPI`:
 ```typescript
 // bot.ts
 export class CCIDynamic extends Debut {
-    declare opts: CandlesPluginAPI;
+    declare opts: BridgePluginAPI;
 
     //...
 
 }
 ```
 
-3. Register `candlesPlugin()` plugin
+3. Register `bridgePlugin()` plugin
 ```typescript
 // bot.ts
-this.registerPlugins([candlesPlugin(this.opts, env?)]);
+this.registerPlugins([bridgePlugin(this.opts, env?)]);
 ```
 
 4. Get candles:
 ```typescript
 // bot.ts
-this.plugins.candles.get();
+this.plugins.bridge.get();
 
 // will return:
 // [
