@@ -12,7 +12,7 @@ interface BridgeMethodsInterface {
 }
 
 export interface BridgePluginOptions extends DebutOptions, LoggerOptions {
-    tickers: string[];
+    bridge: string[];
     // TODO: Get this param from CLI
     learningDays?: number;
 }
