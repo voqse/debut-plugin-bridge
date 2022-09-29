@@ -2,36 +2,36 @@ import { Candle, DebutOptions, PluginInterface, WorkingEnv } from '@debut/types'
 import { logger, LoggerOptions } from '@voqse/logger';
 import { Bot } from './bot';
 
-const pluginName = 'candles';
+const pluginName = 'bridge';
 
 // TODO: Validate if a key is in opts.candles array
-export type CandlesData<T> = {
+export type BridgeData<T> = {
     [key: string]: T;
 };
 
-interface CandlesMethodsInterface {
+interface BridgeMethodsInterface {
     get(): Candle[];
 }
 
-export interface CandlesPluginOptions extends DebutOptions, LoggerOptions {
-    candles: string[];
+export interface BridgePluginOptions extends DebutOptions, LoggerOptions {
+    tickers: string[];
     // TODO: Get this param from CLI
     learningDays?: number;
 }
 
-export interface CandlesPluginAPI {
-    [pluginName]: CandlesMethodsInterface;
+export interface BridgePluginAPI {
+    [pluginName]: BridgeMethodsInterface;
 }
 
-export interface CandlesPluginInterface extends PluginInterface {
+export interface BridgePluginInterface extends PluginInterface {
     name: string;
-    api: CandlesMethodsInterface;
+    api: BridgeMethodsInterface;
 }
 
-export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): CandlesPluginInterface {
+export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): BridgePluginInterface {
     const log = logger(pluginName, opts);
-    const bots: CandlesData<Bot> = {};
-    const candles: CandlesData<Candle> = {};
+    const bots: BridgeData<Bot> = {};
+    const candles: BridgeData<Candle> = {};
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
 
@@ -48,7 +48,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
             // Init additional bots for every extra ticker
             await Promise.allSettled(
-                opts.candles.map((ticker) => {
+                opts.tickers.map((ticker) => {
                     log.debug(`Creating ${ticker} bot...`);
                     bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
 
@@ -72,7 +72,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
             // Start all the bots concurrently
             await Promise.allSettled(
-                opts.candles.map((ticker) => {
+                opts.tickers.map((ticker) => {
                     log.debug(`Starting ${ticker} bot...`);
                     bots[ticker].start();
                 }),
@@ -94,7 +94,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
             };
 
             // Get most recent candles from bots as soon as possible
-            for (const ticker of opts.candles) {
+            for (const ticker of opts.tickers) {
                 candles[ticker] = getCandle(ticker);
             }
         },
@@ -122,7 +122,7 @@ export function candlesPlugin(opts: CandlesPluginOptions, env?: WorkingEnv): Can
 
             // Stop all the bots concurrently
             await Promise.allSettled(
-                opts.candles.map((ticker) => {
+                opts.tickers.map((ticker) => {
                     log.debug(`Stop ${ticker} bot...`);
                     bots[ticker].dispose();
                 }),
