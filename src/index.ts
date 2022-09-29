@@ -2,10 +2,8 @@ import { Candle, DebutOptions, PluginInterface, WorkingEnv } from '@debut/types'
 import { logger, LoggerOptions } from '@voqse/logger';
 import { Bot } from './bot';
 
-const pluginName = 'bridge';
-
 // TODO: Validate if a key is in opts.candles array
-export type BridgeData<T> = {
+type BridgeData<T> = {
     [key: string]: T;
 };
 
@@ -20,7 +18,7 @@ export interface BridgePluginOptions extends DebutOptions, LoggerOptions {
 }
 
 export interface BridgePluginAPI {
-    [pluginName]: BridgeMethodsInterface;
+    bridge: BridgeMethodsInterface;
 }
 
 export interface BridgePluginInterface extends PluginInterface {
@@ -29,14 +27,14 @@ export interface BridgePluginInterface extends PluginInterface {
 }
 
 export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): BridgePluginInterface {
-    const log = logger(pluginName, opts);
+    const log = logger('bridge', opts);
     const bots: BridgeData<Bot> = {};
     const candles: BridgeData<Candle> = {};
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
 
     return {
-        name: pluginName,
+        name: 'bridge',
         api: {
             get: () => Object.values(candles),
         },
