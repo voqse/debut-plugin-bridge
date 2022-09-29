@@ -33,6 +33,6 @@
         "typescript": "^4.8.2"
     },
     "dependencies": {
-        "@voqse/logger": "^1.0.4"
+        "@voqse/logger": "^1.0.6"
     }
 }

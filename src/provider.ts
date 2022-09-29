@@ -8,7 +8,7 @@ type Params = {
     gap?: number;
 };
 
-export class Bot extends Debut {
+export class Provider extends Debut {
     private historicalTicks: Candle[] = [];
     private learningDays: number;
 

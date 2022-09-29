@@ -1,6 +1,6 @@
 import { Candle, DebutOptions, PluginInterface, WorkingEnv } from '@debut/types';
 import { logger, LoggerOptions } from '@voqse/logger';
-import { Bot } from './bot';
+import { Provider } from './provider';
 
 // TODO: Validate if a key is in opts.candles array
 type BridgeData<T> = {
@@ -28,7 +28,7 @@ export interface BridgePluginInterface extends PluginInterface {
 
 export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): BridgePluginInterface {
     const log = logger('bridge', opts);
-    const bots: BridgeData<Bot> = {};
+    const providers: BridgeData<Provider> = {};
     const candles: BridgeData<Candle> = {};
 
     let testing = env === WorkingEnv.tester || env === WorkingEnv.genetic;
@@ -44,54 +44,55 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
             // Get main bot config
             const { transport, opts: debutOpts } = this.debut;
 
-            // Init additional bots for every extra ticker
-            await Promise.allSettled(
+            // Init providers for every extra ticker
+            await Promise.all(
                 opts.bridge.map((ticker) => {
-                    log.debug(`Creating ${ticker} bot...`);
-                    bots[ticker] = new Bot(transport, { ...debutOpts, ticker, sandbox: true });
+                    log.debug(`Creating ${ticker} provider...`);
+                    providers[ticker] = new Provider(transport, { ...debutOpts, ticker, sandbox: true });
 
                     // Load history if testing or learning mode
                     // TODO: 1. Fix Issue: If main ticker history loaded, tester doesn't wait
                     //       for additional loading, so plugin returns undefined candles
                     //       2. Move cli days arg here and call init() without conditional
                     if (testing) {
-                        bots[ticker].init();
+                        providers[ticker].init();
                     } else if (opts.learningDays) {
-                        bots[ticker].init(opts.learningDays);
+                        providers[ticker].init(opts.learningDays);
                     }
                 }),
             );
-            log.debug(`${Object.keys(bots).length} bot(s) created`);
+            log.debug(`${Object.keys(providers).length} provider(s) created`);
         },
 
         async onStart() {
             log.info('Starting plugin...');
             if (testing) return;
 
-            // Start all the bots concurrently
-            await Promise.allSettled(
+            // Start all the providers concurrently
+            await Promise.all(
                 opts.bridge.map((ticker) => {
-                    log.debug(`Starting ${ticker} bot...`);
-                    bots[ticker].start();
+                    log.debug(`Starting ${ticker} provider...`);
+                    providers[ticker].start();
                 }),
             );
-            log.debug(`${Object.keys(bots).length} bot(s) started`);
+            log.debug(`${Object.keys(providers).length} provider(s) started`);
         },
 
         onBeforeTick() {
             let getCandle = (ticker) => {
-                const candle = bots[ticker].getCandle();
+                const candle = providers[ticker].getCandle();
 
                 if (!candle) {
-                    throw 'pluginCandles: Undefined candle received, please check your transport.';
+                    log.error('Undefined candle received, please check your transport')
+                    process.exit(0)
                 }
 
                 // Do not check candles if transport is ok
-                getCandle = (ticker) => bots[ticker].getCandle();
+                getCandle = (ticker) => providers[ticker].getCandle();
                 return candle;
             };
 
-            // Get most recent candles from bots as soon as possible
+            // Get most recent candles from providers as soon as possible
             for (const ticker of opts.bridge) {
                 candles[ticker] = getCandle(ticker);
             }
@@ -118,14 +119,14 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
             log.info('Shutting down plugin...');
             if (testing) return;
 
-            // Stop all the bots concurrently
-            await Promise.allSettled(
+            // Stop all the providers concurrently
+            await Promise.all(
                 opts.bridge.map((ticker) => {
-                    log.debug(`Stop ${ticker} bot...`);
-                    bots[ticker].dispose();
+                    log.debug(`Stop ${ticker} provider...`);
+                    providers[ticker].dispose();
                 }),
             );
-            log.debug(`${Object.keys(bots).length} bot(s) stopped`);
+            log.debug(`${Object.keys(providers).length} provider(s) stopped`);
         },
     };
 }
