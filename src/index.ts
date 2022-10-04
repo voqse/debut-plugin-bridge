@@ -60,7 +60,7 @@ export function bridgePlugin(opts: BridgePluginOptions, env?: WorkingEnv): Bridg
                     log.debug(`Creating ${ticker} provider...`);
                     // Load history if testing or learning mode
                     // TODO: 1. Move cli days arg here and call init() without conditional
-                    return providers[ticker].init(opts.learningDays);
+                    return providers[ticker].init(days);
                 }),
             );
         },
