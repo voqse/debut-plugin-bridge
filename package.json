@@ -1,6 +1,6 @@
 {
     "name": "debut-plugin-bridge",
-    "version": "1.5.8",
+    "version": "1.5.9",
     "description": "Debut plugin that provides additional candles for specified tickers.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
