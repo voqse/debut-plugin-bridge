@@ -2,7 +2,7 @@ import { Debut, generateOHLC, getHistory } from '@debut/community-core';
 import { BaseTransport, Candle, DebutOptions } from '@debut/types';
 import { cli } from '@debut/plugin-utils';
 
-type Params = {
+export type Params = {
     days?: number;
     ohlc?: boolean;
     gap?: number;
