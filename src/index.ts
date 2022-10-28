@@ -57,7 +57,6 @@ export function bridgePlugin(opts: BridgePluginOptions): BridgePluginInterface {
                 log.debug(`Creating ${ticker} provider...`);
                 providers[ticker] = new Provider(transport, { ...debutOpts, ticker, sandbox: true });
             });
-            // log.debug(`${Object.keys(providers).length} provider(s) created`);
         },
 
         async onLearn(days) {
@@ -84,41 +83,45 @@ export function bridgePlugin(opts: BridgePluginOptions): BridgePluginInterface {
             });
         },
 
-        onBeforeTick() {
+        async onCandle(candle) {
             let getCandle = (ticker) => {
-                const candle = providers[ticker].getCandle();
+                const bridgedCandle = providers[ticker].getCandle();
 
-                if (!candle) {
-                    log.error('Undefined candle received, please check your transport');
+                if (testing && candle.time !== bridgedCandle.time) {
+                    log.error('Different candle time received, please check your transport');
                     process.exit(0);
                 }
 
-                return candle;
+                return bridgedCandle;
             };
 
             // Get most recent candles from providers as soon as possible
             allTickersSync((ticker) => {
                 candles[ticker] = getCandle(ticker);
             });
-        },
 
-        // Debug logging
-        async onTick(tick) {
-            log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
-            allTickersSync((ticker) => {
-                log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
-            });
-        },
-
-        async onCandle(candle) {
             log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
             allTickersSync((ticker) => {
                 log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
             });
         },
 
+        // Debug logging
+        // async onTick(tick) {
+        //     log.verbose(`onTick: ${opts.ticker}:`, ...Object.values(tick));
+        //     allTickersSync((ticker) => {
+        //         log.verbose(`onTick: ${ticker}:`, ...Object.values(candles[ticker]));
+        //     });
+        // },
+        //
+        // async onCandle(candle) {
+        //     log.verbose(`onCandle: ${opts.ticker}:`, ...Object.values(candle));
+        //     allTickersSync((ticker) => {
+        //         log.verbose(`onCandle: ${ticker}:`, ...Object.values(candles[ticker]));
+        //     });
+        // },
+
         async onDispose() {
-            // log.info('Shutting down plugin...');
             if (testing) return;
 
             // Stop all the providers concurrently

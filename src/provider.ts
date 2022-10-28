@@ -11,6 +11,8 @@ export type Params = {
 export class Provider extends Debut {
     private historicalTicks: Candle[] = [];
     private learningDays: number;
+    private counter: number = 0;
+    public currentTick: Candle;
 
     constructor(transport: BaseTransport, opts: DebutOptions) {
         super(transport, opts);
@@ -36,27 +38,34 @@ export class Provider extends Debut {
 
         this.historicalTicks = await getHistory(opts);
 
-        if (ohlc) {
-            this.historicalTicks = generateOHLC(this.historicalTicks);
-        }
+        // if (ohlc) {
+        //     this.historicalTicks = generateOHLC(this.historicalTicks);
+        // }
+    }
+
+    async onTick(candle: Candle) {
+        this.currentTick = candle;
     }
 
     private learningCandles(): Candle {
-        if (this.historicalTicks.length) {
-            return this.historicalTicks.shift();
+        if (this.counter < this.historicalTicks.length) {
+            return this.historicalTicks[this.counter++];
         }
-        this.getCandle = () => this.currentCandle;
-        return this.currentCandle;
+
+        this.getCandle = () => this.currentTick;
+        return this.currentTick;
     }
 
     public getCandle(): Candle {
         if (this.historicalTicks.length) {
             // Boost performance by omitting conditional expression
-            this.getCandle = this.learningDays ? this.learningCandles : () => this.historicalTicks.shift();
-            return this.historicalTicks[0];
+            this.getCandle = this.learningDays
+                ? this.learningCandles
+                : () => this.historicalTicks[this.counter++ % this.historicalTicks.length];
+            return this.historicalTicks[this.counter++];
         }
 
-        this.getCandle = () => this.currentCandle;
-        return this.currentCandle;
+        this.getCandle = () => this.currentTick;
+        return this.currentTick;
     }
 }
